@@ -4,9 +4,9 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from datetime import datetime
-import csv
 import time
 from selenium.webdriver.chrome.options import Options
+import openpyxl
 
 # Configurar o caminho do ChromeDriver
 driver_path = r"C:\Users\Public\Chromedriver\chromedriver-win64\chromedriver.exe"  # Atualize para o caminho correto
@@ -15,27 +15,33 @@ service = Service(driver_path)
 # URL do site de previsão do tempo
 url = "https://www.climatempo.com.br/"
 
-# Nome do arquivo CSV para salvar os dados
-arquivo_csv = "dados_temperatura.csv"
+# Nome do arquivo Excel para salvar os dados
+arquivo_excel = "dados_temperatura.xlsx"
 
-# Função para criar o arquivo CSV (caso não exista)
-def criar_arquivo_csv():
-    with open(arquivo_csv, mode="w", newline="", encoding="utf-8") as arquivo:
-        escritor = csv.writer(arquivo)
-        escritor.writerow(["Data e Hora", "Temperatura", "Umidade"])
+# Função para criar a planilha Excel (caso não exista)
+def criar_arquivo_excel():
+    try:
+        wb = openpyxl.load_workbook(arquivo_excel)
+    except FileNotFoundError:
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Dados Clima"
+        ws.append(["Data e Hora", "Temperatura", "Umidade"])  # Cabeçalhos
+        wb.save(arquivo_excel)
 
-# Função para salvar dados no arquivo CSV
-def salvar_dados_csv(data_hora, temperatura, umidade):
-    with open(arquivo_csv, mode="a", newline="", encoding="utf-8") as arquivo:
-        escritor = csv.writer(arquivo)
-        escritor.writerow([data_hora, temperatura, umidade])
+# Função para salvar dados na planilha Excel
+def salvar_dados_excel(data_hora, temperatura, umidade):
+    wb = openpyxl.load_workbook(arquivo_excel)
+    ws = wb.active
+    ws.append([data_hora, temperatura, umidade])  # Adicionar dados à planilha
+    wb.save(arquivo_excel)
 
 # Função para capturar os dados
 def capturar_dados():
     driver = None
     try:
-        # Criar o arquivo CSV se for a primeira execução
-        criar_arquivo_csv()
+        # Criar a planilha Excel se for a primeira execução
+        criar_arquivo_excel()
 
         # Configuração para ignorar erros SSL e desabilitar permissão de localização
         chrome_options = Options()
@@ -66,8 +72,8 @@ def capturar_dados():
         # Registrar data e hora
         data_hora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        # Salvar no CSV
-        salvar_dados_csv(data_hora, temperatura, umidade)
+        # Salvar no Excel
+        salvar_dados_excel(data_hora, temperatura, umidade)
 
         # Atualizar os rótulos da interface gráfica com os dados
         label_dados.config(text=f"Temperatura: {temperatura}\nUmidade: {umidade}")
